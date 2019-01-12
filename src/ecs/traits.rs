@@ -12,14 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::typelist::IntoTypeList;
-use crate::*;
+use crate::ecs::typelist::IntoTypeList;
+use crate::ecs::*;
 
 /// Trait that systems must implement.
 pub trait System {
+    /// The components and resources this system needs to run.
     type Dependencies: IntoTypeList;
     /// Run the system.
     fn run(&mut self, dependencies: Self::Dependencies);
+}
+
+/// Output of `PureFunctionalSystem` for one component.
+pub enum SystemOutput<T> {
+    /// Ignore the component (neither update nor delete it).
+    Ignore,
+    /// Delete the component if it exists.
+    Delete,
+    /// Update the component with a new value.
+    Update(T),
+}
+
+impl<T> Default for SystemOutput<T> {
+    fn default() -> Self {
+        SystemOutput::Ignore
+    }
 }
 
 /// For systems that don't cause side effects or need to reason about entities or components
@@ -65,7 +82,9 @@ pub trait BuildWith<T> {
 
 /// Trait that all component storage types must implement.
 pub trait ComponentStorage<'a, T: 'a> {
+    /// Immutable iterator type.
     type Iter: Iterator<Item = Option<&'a T>>;
+    /// Mutable iterator type.
     type IterMut: Iterator<Item = Option<&'a mut T>>;
     /// Get the component corresponding to the given entity, if it exists.
     fn get(&self, entity: Entity) -> Option<&T>;
@@ -76,12 +95,21 @@ pub trait ComponentStorage<'a, T: 'a> {
     fn reserve(&mut self, _n: usize) {}
     /// Get the number of components currently stored.
     fn size(&self) -> usize;
+    /// Iterate over the components in this storage.
+    ///
+    /// **This *must* output a value for every entity in the world.**
     fn iter(&'a self) -> Self::Iter;
+    /// Mutably iterate over the components in this storage.
+    ///
+    /// **This *must* output a value for every entity in the world.**
     fn iter_mut(&'a mut self) -> Self::IterMut;
 }
 
+/// Get the `Resources` struct from a world generically.
 pub trait ResourceProvider {
+    /// The `Resources` struct type.
     type Resources;
+    /// Get the resources struct.
     fn get_resources(&mut self) -> &Self::Resources;
 }
 
@@ -91,6 +119,7 @@ pub trait GetComponent<'a, T: 'a> {
     type Storage: ComponentStorage<'a, T>;
     /// Get the storage.
     fn get(&self) -> std::cell::Ref<Self::Storage>;
+    /// Get the storage mutably.
     fn get_mut(&self) -> std::cell::RefMut<Self::Storage>;
 }
 
@@ -100,6 +129,7 @@ mod private {
 
 /// Trait for converting tuples into tuples of `SystemOutput`s.
 pub trait SystemOutputTuple: private::Sealed {
+    /// The output of the conversion.
     type OutputTuple;
 }
 

@@ -97,7 +97,7 @@ bitset_impl!(u128, 128);
 
 #[cfg(test)]
 mod tests {
-    use crate::bitset::*;
+    use crate::ecs::bitset::*;
     #[test]
     fn bitset() {
         let mut x: u32 = 0;

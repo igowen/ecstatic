@@ -12,17 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Ecstatic is a library for implementing the Entity Component System architecture (ECS). It is
-//! primarily designed for use in games, although there is nothing strictly game-specific in the
-//! API.
-//!
-//! Design goals:
-//! * Statically typed (no library-level runtime errors or stringly-typed functionality)
-//! * Functional (as in programming) paradigm
-//! * No unsafe code
-
-#![recursion_limit = "72"]
-
 /// Type-level metaprogramming traits that allow the library to validate certain invariants at compile
 /// time.
 ///
@@ -45,15 +34,15 @@
 ///
 /// `TypeList`s are constructed from lisp-style `cons` cells, terminating with `Nil`.
 /// ```
-/// # use ecstatic::typelist::*;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = TypeCons<f64, TypeCons<u32, TypeCons<String, Nil>>>;
 /// ```
 ///
 /// The [`tlist!`](../macro.tlist.html) macro is provided to make writing these types easier and
 /// less verbose.
 /// ```
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = tlist![f64, u32, String];
 /// ```
 ///
@@ -61,8 +50,8 @@
 /// type parameter used by `Consume`; it should be left up to the type checker to infer. It's kind
 /// of a bummer that this has to leak into the public interface, but that's the way it is.
 /// ```
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = tlist![f64, u32, String];
 /// fn do_stuff<T, I>(t: T) where AvailableTypes: Consume<T, I> {
 ///     // Do something with `t`
@@ -74,8 +63,8 @@
 ///
 /// Calling `do_struff()` with types that are not in `AvailableTypes` will fail to type check.
 /// ```compile_fail
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// struct Whatever {
 ///     x: f32,
 ///     y: f32,
@@ -84,18 +73,18 @@
 /// fn do_stuff<T, I>(t: T) where AvailableTypes: Consume<T, I> {
 ///     // Do something with `t`
 /// }
-/// do_stuff(Whatever { 1.0, 3.0 });
+/// do_stuff(Whatever { x: 1.0, y: 3.0 });
 /// ```
 ///
 /// Unfortunately, the error messages you get from the type checker failing are not particularly
 /// helpful. For instance, in the example above, you will get something like the following:
 ///
 /// ```text
-/// error[E0277]: the trait bound `main::ecstatic::typelist::Nil: main::ecstatic::typelist::Consume<main::Whatever, _>` is not satisfied
+/// error[E0277]: the trait bound `main::dashing::ecs::typelist::Nil: main::dashing::ecs::typelist::Consume<main::Whatever, _>` is not satisfied
 ///   --> src/lib.rs:75:1
 ///    |
 /// 14 | do_stuff(Whatever { 1.0, 3.0 });
-///    | ^^^^^^^^ the trait `main::ecstatic::typelist::Consume<main::Whatever, _>` is not implemented for `main::ecstatic::typelist::Nil`
+///    | ^^^^^^^^ the trait `main::dashing::ecs::typelist::Consume<main::Whatever, _>` is not implemented for `main::dashing::ecs::typelist::Nil`
 ///    |
 /// ```
 ///
@@ -105,8 +94,8 @@
 /// with a similar "Index" type that you should let the compiler infer, like with `Consume`).
 ///
 /// ```
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = tlist![f64, u32, String];
 /// fn do_stuff<T, I>() where AvailableTypes: ConsumeMultiple<T, I> {
 ///     // Do something
@@ -116,8 +105,8 @@
 ///
 /// This similarly will fail to type check if not all of the types are available in the source list.
 /// ```compile_fail
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = tlist![f64, u32, String];
 /// fn do_stuff<T, I>() where AvailableTypes: ConsumeMultiple<T, I> {
 ///     // Do something
@@ -129,8 +118,8 @@
 /// us to write generic functions over `T`, `U` such that `T != U` (!).
 ///
 /// ```
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// fn do_stuff<T, U, I>() where tlist![T, U]: ConsumeMultiple<tlist![T, U], I> {
 ///     // Do something
 /// }
@@ -138,26 +127,28 @@
 /// ```
 ///
 /// ```compile_fail
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// fn do_stuff<T, U, I>() where tlist![T, U]: ConsumeMultiple<tlist![T, U], I> {
 ///     // Do something
 /// }
 ///
-/// // Using the same type for `T` and `U` causes the following compilation error:
+/// // Using the same type for `T` and `U` causes a compilation error along the lines of the
+/// // following:
+/// //
 /// // error[E0282]: type annotations needed
-/// //  --> src/lib.rs:134:1
+/// //  --> src/ecs.rs:147:1
 /// //   |
 /// // 8 | do_stuff::<u32, u32, _>();
-/// //   | ^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type for `IndexHead`
+/// //   | ^^^^^^^^^^^^^^^^^^^^^^^ cannot infer type for `IHEAD`
 /// do_stuff::<u32, u32, _>();
 /// ```
 ///
 /// There is also a trait called `IntoTypeList` that allows easy conversion from tuples (up to
 /// length 32) to `TypeList`.
 /// ```
-/// # #[macro_use] extern crate ecstatic;
-/// # use ecstatic::typelist::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::typelist::*;
 /// type AvailableTypes = tlist![f64, u32, String];
 /// fn do_stuff<T, U, I>()
 /// where
@@ -177,20 +168,24 @@
 #[macro_use]
 pub mod typelist;
 
+/// Traits used in the ECS interface(s).
 pub mod traits;
 
 mod bitset;
 
-pub use crate::traits::*;
+pub use crate::ecs::traits::*;
 
 /// `Entity` is an opaque identifier that can be used to look up associated components in a
 /// `World`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub struct Entity {
+    /// The id of this entity within the world.
     pub id: usize,
+    /// The generation of this entity.
     pub generation: usize,
 }
 
+/// Iterator type for `DumbVecStorage`.
 pub struct DumbVecIter<'a, T: 'a>(std::slice::Iter<'a, Option<T>>);
 impl<'a, T: 'a> Iterator for DumbVecIter<'a, T> {
     type Item = Option<&'a T>;
@@ -199,6 +194,7 @@ impl<'a, T: 'a> Iterator for DumbVecIter<'a, T> {
     }
 }
 
+/// Mutable iterator for `DumbVecStorage`.
 pub struct DumbVecIterMut<'a, T: 'a>(std::slice::IterMut<'a, Option<T>>);
 impl<'a, T: 'a> Iterator for DumbVecIterMut<'a, T> {
     type Item = Option<&'a mut T>;
@@ -207,6 +203,7 @@ impl<'a, T: 'a> Iterator for DumbVecIterMut<'a, T> {
     }
 }
 
+/// `ComponentStorage` that is just `Vec<Option<T>>`.
 #[derive(Clone, Debug, Default)]
 pub struct DumbVecStorage<T>(Vec<Option<T>>);
 
@@ -247,7 +244,7 @@ where
     }
 }
 
-/// Defines the set of data structures necessary for using `ecstatic`.
+/// Defines the set of data structures necessary for using dashing's ECS architecture.
 ///
 /// Generates the following structs:
 /// - `Resources`
@@ -261,7 +258,8 @@ where
 ///
 /// # Example
 /// ```
-/// # use ecstatic::*;
+/// # #[macro_use] extern crate dashing;
+/// # use dashing::ecs::*;
 /// #[derive(Default, Debug)]
 /// struct Data {
 ///     info: String,
@@ -340,14 +338,14 @@ macro_rules! __define_world_internal {
             free_list: Vec<Entity>,
         }
 
-        impl $crate::ResourceProvider for World {
+        impl $crate::ecs::ResourceProvider for World {
             type Resources = Resources;
             fn get_resources(&mut self) -> &Self::Resources {
                 &self.resources
             }
         }
 
-        impl<'a> $crate::WorldInterface<'a> for World {
+        impl<'a> $crate::ecs::WorldInterface<'a> for World {
             type EntityBuilder = EntityBuilder<'a>;
             type ComponentSet = ComponentSet;
             type AvailableTypes = tlist!($($type),*);
@@ -364,7 +362,7 @@ macro_rules! __define_world_internal {
             }
 
             fn build_entity(&mut self, components: Self::ComponentSet) -> Entity {
-                use $crate::ComponentStorage;
+                use $crate::ecs::ComponentStorage;
                 let mut entity;
                 if let Some(e) = self.free_list.pop() {
                     entity = e;
@@ -385,7 +383,7 @@ macro_rules! __define_world_internal {
             }
 
             fn delete_entity(&mut self, entity: Entity) {
-                use $crate::ComponentStorage;
+                use $crate::ecs::ComponentStorage;
                 if entity.id < self.num_entities {
                     $(
                         self.resources.$component.borrow_mut().set(entity, None);
@@ -423,14 +421,14 @@ macro_rules! __define_world_internal {
         impl<'a> EntityBuilder<'a> {
             /// Finalize this entity and all of its components by storing them in the `World`.
             $v fn build(self) -> Entity {
-                use $crate::WorldInterface;
+                use $crate::ecs::WorldInterface;
                 self.world.build_entity(self.components)
             }
         }
     };
 
     (@impl_build_with $field:ident $type:ty) => {
-        impl<'a> $crate::BuildWith<$type> for EntityBuilder<'a> {
+        impl<'a> $crate::ecs::BuildWith<$type> for EntityBuilder<'a> {
             fn with(mut self, data: $type) -> Self {
                 self.components.$field = Some(data);
                 self
@@ -439,23 +437,9 @@ macro_rules! __define_world_internal {
     };
 }
 
-pub enum SystemOutput<T> {
-    Ignore,
-    Delete,
-    Update(T),
-}
-
-impl<T> Default for SystemOutput<T> {
-    fn default() -> Self {
-        SystemOutput::Ignore
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::bitset::*;
-    use crate::typelist::*;
-    use crate::*;
+    use crate::ecs::*;
     #[test]
     fn can_provide() {
         define_world!(

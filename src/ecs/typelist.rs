@@ -45,6 +45,7 @@ pub trait Append<T>: private::Sealed
 where
     T: TypeList,
 {
+    /// `Self` with `T` appended.
     type Output: TypeList;
 }
 
@@ -67,6 +68,7 @@ where
 ///
 /// See the [module-level documentation](index.html#examples) for examples.
 pub trait Consume<T, INDEX>: private::Sealed {
+    /// The `TypeList` with all instances of `T` removed.
     type Remainder: TypeList;
 }
 
@@ -84,7 +86,8 @@ impl<HEAD, TAIL: TypeList> Consume<HEAD, Found> for TypeCons<HEAD, TAIL> {
 /// Remove multiple elements, leaving `Self::Remainder`. `INDICES` must be inferred.
 ///
 /// See the [module-level documentation](index.html#examples) for examples.
-pub trait ConsumeMultiple<T, INDICES>: private::Sealed {
+pub trait ConsumeMultiple<TLIST, INDICES>: private::Sealed {
+    /// The `TypeList` with all of the elements of `T` removed.
     type Remainder;
 }
 
@@ -108,6 +111,7 @@ where
 
 /// Easy conversion into `TypeList`.
 pub trait IntoTypeList: private::Sealed {
+    /// The `TypeList` that is equivalent to this type.
     type Type: TypeList;
 }
 
@@ -121,9 +125,9 @@ where
 
 #[macro_export]
 macro_rules! tlist {
-    ($t:ty $(,)*) => { $crate::typelist::TypeCons<$t, $crate::typelist::Nil> };
+    ($t:ty $(,)*) => { $crate::ecs::typelist::TypeCons<$t, $crate::ecs::typelist::Nil> };
     ($t:ty, $($ts:ty),+ $(,)*) => {
-        $crate::typelist::TypeCons<$t, tlist!($($ts,)*)>
+        $crate::ecs::typelist::TypeCons<$t, tlist!($($ts,)*)>
     };
 }
 
