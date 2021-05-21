@@ -1,0 +1,1 @@
+ecstatic - statically typed ECS
