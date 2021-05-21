@@ -154,7 +154,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::ecs::bitset::*;
+    use crate::bitset::*;
     #[test]
     fn bitset() {
         let mut x: u32 = 0;

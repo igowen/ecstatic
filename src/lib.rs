@@ -56,8 +56,8 @@
 //! # Examples
 //!
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::*;
 //! #[derive(Debug, PartialEq)]
 //! pub struct Data {
 //!     x: u32,
@@ -136,8 +136,8 @@
 //! Components accessed via `ReadComponent` cannot be iterated over mutably:
 //!
 //! ```compile_fail
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::*;
 //! #[derive(Debug, PartialEq)]
 //! pub struct Data {
 //!     x: u32,
@@ -180,9 +180,9 @@ pub mod join;
 
 mod bitset;
 
-pub use crate::ecs::join::*;
-pub use crate::ecs::storage::*;
-pub use crate::ecs::traits::*;
+pub use crate::join::*;
+pub use crate::storage::*;
+pub use crate::traits::*;
 
 /// `Entity` is an opaque identifier that can be used to look up associated components in a
 /// `World`.
@@ -194,7 +194,7 @@ pub struct Entity {
     pub generation: usize,
 }
 
-/// Defines the set of data structures necessary for using dashing's ECS architecture.
+/// Defines the set of data structures necessary for using `ecstatic`.
 ///
 /// Generates the following structs:
 /// - `Resources`
@@ -208,8 +208,8 @@ pub struct Entity {
 ///
 /// # Example
 /// ```
-/// # #[macro_use] extern crate dashing;
-/// # use dashing::ecs::*;
+/// # #[macro_use] extern crate ecstatic;
+/// # use ecstatic::*;
 /// #[derive(Default, Debug)]
 /// struct Data {
 ///     info: String,
@@ -270,7 +270,7 @@ macro_rules! define_world {
 macro_rules! __define_world_internal {
     (@impl_storage_spec {$($component_type:ty; $($component_storage:ident)::+ )*}) => {
         $(
-            impl<'a> $crate::ecs::StorageSpec<'a> for $component_type {
+            impl<'a> $crate::StorageSpec<'a> for $component_type {
                 type Storage = $($component_storage)::* <$component_type>;
                 type Component = $component_type;
             }
@@ -332,14 +332,14 @@ macro_rules! __define_world_internal {
             free_list: Vec<Entity>,
         }
 
-        impl $crate::ecs::ResourceProvider for World {
+        impl $crate::ResourceProvider for World {
             type Resources = Resources;
             fn get_resources(&mut self) -> &Self::Resources {
                 &self.resources
             }
         }
 
-        impl<'a> $crate::ecs::WorldInterface<'a> for World {
+        impl<'a> $crate::WorldInterface<'a> for World {
             type EntityBuilder = EntityBuilder<'a>;
             type ComponentSet = ComponentSet;
             type AvailableTypes = tlist!($($type),*);
@@ -356,7 +356,7 @@ macro_rules! __define_world_internal {
             }
 
             fn build_entity(&mut self, components: Self::ComponentSet) -> Entity {
-                use $crate::ecs::ComponentStorage;
+                use $crate::ComponentStorage;
                 let mut entity;
                 if let Some(e) = self.free_list.pop() {
                     entity = e;
@@ -377,7 +377,7 @@ macro_rules! __define_world_internal {
             }
 
             fn delete_entity(&mut self, entity: Entity) {
-                use $crate::ecs::ComponentStorage;
+                use $crate::ComponentStorage;
                 if entity.id < self.num_entities {
                     $(
                         self.resources.$component.borrow_mut().set(entity, None);
@@ -405,14 +405,14 @@ macro_rules! __define_world_internal {
         impl<'a> EntityBuilder<'a> {
             /// Finalize this entity and all of its components by storing them in the `World`.
             $v fn build(self) -> Entity {
-                use $crate::ecs::WorldInterface;
+                use $crate::WorldInterface;
                 self.world.build_entity(self.components)
             }
         }
     };
 
     (@impl_build_with $field:ident $type:ty) => {
-        impl<'a> $crate::ecs::BuildWith<$type> for EntityBuilder<'a> {
+        impl<'a> $crate::BuildWith<$type> for EntityBuilder<'a> {
             fn with(mut self, data: $type) -> Self {
                 self.components.$field = Some(data);
                 self

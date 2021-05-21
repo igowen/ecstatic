@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::ecs::*;
+use crate::*;
 
 /// Trait that allows us to convert flat tuple types to nested tuple types (e.g.,
 /// `(A, B, C)` → `(A, (B, (C, ())))`).

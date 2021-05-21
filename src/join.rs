@@ -68,11 +68,11 @@
 //! possible for client code to violate this soundness by implementing this trait and doing
 //! something funky with the closure.
 
-use crate::ecs::*;
+use crate::*;
 
 mod private {
     pub trait Sealed {}
-    use crate::ecs::{ReadComponent, StorageSpec, WriteComponent};
+    use crate::{ReadComponent, StorageSpec, WriteComponent};
     impl<'a, 'b, H, T> Sealed for (&'a ReadComponent<'b, H>, T) where H: StorageSpec<'b> {}
     impl<'a, 'b, H, T> Sealed for (&'a WriteComponent<'b, H>, T) where H: StorageSpec<'b> {}
     impl<'a, 'b, H, T> Sealed for (&'a mut WriteComponent<'b, H>, T) where H: StorageSpec<'b> {}

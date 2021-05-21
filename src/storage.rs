@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::ecs::bitset::*;
-use crate::ecs::*;
+use crate::bitset::*;
+use crate::*;
 
 use std::cell::{Ref, RefMut, UnsafeCell};
 use std::ops::{Deref, DerefMut};

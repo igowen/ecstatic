@@ -1,4 +1,4 @@
-use crate::ecs::*;
+use crate::*;
 
 #[derive(Debug, PartialEq)]
 pub struct Data {

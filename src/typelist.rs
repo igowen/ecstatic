@@ -34,15 +34,15 @@
 //!
 //! `TypeList`s are constructed from lisp-style `cons` cells, terminating with `Nil`.
 //! ```
-//! # use dashing::ecs::typelist::*;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = TypeCons<f64, TypeCons<u32, TypeCons<String, Nil>>>;
 //! ```
 //!
 //! The [`tlist!`](../macro.tlist.html) macro is provided to make writing these types easier and
 //! less verbose.
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = tlist![f64, u32, String];
 //! ```
 //!
@@ -50,8 +50,8 @@
 //! type parameter used by `Consume`; it should be left up to the type checker to infer. It's kind
 //! of a bummer that this has to leak into the public interface, but that's the way it is.
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = tlist![f64, u32, String];
 //! fn do_stuff<T, I>(t: T) where AvailableTypes: Consume<T, I> {
 //!     // Do something with `t`
@@ -63,8 +63,8 @@
 //!
 //! Calling `do_struff()` with types that are not in `AvailableTypes` will fail to type check.
 //! ```compile_fail
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! struct Whatever {
 //!     x: f32,
 //!     y: f32,
@@ -80,11 +80,11 @@
 //! helpful. For instance, in the example above, you will get something like the following:
 //!
 //! ```text
-//! error[E0277]: the trait bound `main::dashing::ecs::typelist::Nil: main::dashing::ecs::typelist::Consume<main::Whatever, _>` is not satisfied
+//! error[E0277]: the trait bound `main::ecstatic::typelist::Nil: main::ecstatic::typelist::Consume<main::Whatever, _>` is not satisfied
 //!   --> src/lib.rs:75:1
 //!    |
 //! 14 | do_stuff(Whatever { 1.0, 3.0 });
-//!    | ^^^^^^^^ the trait `main::dashing::ecs::typelist::Consume<main::Whatever, _>` is not implemented for `main::dashing::ecs::typelist::Nil`
+//!    | ^^^^^^^^ the trait `main::ecstatic::typelist::Consume<main::Whatever, _>` is not implemented for `main::ecstatic::typelist::Nil`
 //!    |
 //! ```
 //!
@@ -94,8 +94,8 @@
 //! with a similar "Index" type that you should let the compiler infer, like with `Consume`).
 //!
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = tlist![f64, u32, String];
 //! fn do_stuff<T, I>() where AvailableTypes: ConsumeMultiple<T, I> {
 //!     // Do something
@@ -105,8 +105,8 @@
 //!
 //! This similarly will fail to type check if not all of the types are available in the source list.
 //! ```compile_fail
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = tlist![f64, u32, String];
 //! fn do_stuff<T, I>() where AvailableTypes: ConsumeMultiple<T, I> {
 //!     // Do something
@@ -118,8 +118,8 @@
 //! us to write generic functions over `T`, `U` such that `T != U` (!).
 //!
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! fn do_stuff<T, U, I>() where tlist![T, U]: ConsumeMultiple<tlist![T, U], I> {
 //!     // Do something
 //! }
@@ -127,8 +127,8 @@
 //! ```
 //!
 //! ```compile_fail
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! fn do_stuff<T, U, I>() where tlist![T, U]: ConsumeMultiple<tlist![T, U], I> {
 //!     // Do something
 //! }
@@ -147,8 +147,8 @@
 //! There is also a trait called `IntoTypeList` that allows easy conversion from tuples (up to
 //! length 32) to `TypeList`.
 //! ```
-//! # #[macro_use] extern crate dashing;
-//! # use dashing::ecs::typelist::*;
+//! # #[macro_use] extern crate ecstatic;
+//! # use ecstatic::typelist::*;
 //! type AvailableTypes = tlist![f64, u32, String];
 //! fn do_stuff<T, U, I>()
 //! where
@@ -279,9 +279,9 @@ where
 /// Helper macro for writing `TypeList`s.
 #[macro_export]
 macro_rules! tlist {
-    ($t:ty $(,)*) => { $crate::ecs::typelist::TypeCons<$t, $crate::ecs::typelist::Nil> };
+    ($t:ty $(,)*) => { $crate::typelist::TypeCons<$t, $crate::typelist::Nil> };
     ($t:ty, $($ts:ty),+ $(,)*) => {
-        $crate::ecs::typelist::TypeCons<$t, tlist!($($ts,)*)>
+        $crate::typelist::TypeCons<$t, tlist!($($ts,)*)>
     };
 }
 
